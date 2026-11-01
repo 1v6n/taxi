@@ -1,0 +1,7 @@
+line-length=length:100
+
+-explicit-parameter-storage-type
+-explicit-function-lifetime
+-explicit-task-lifetime
++parameter-name-style=localparam_style:ALL_CAPS;parameter_style:ALL_CAPS
++interface-name-style=style_regex:[a-z_0-9]+(_if|_intf)

@@ -1,0 +1,29 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Verilator artifacts
+obj_dir/
+
+# Simulator outputs and wave dumps
+logs/
+waves/
+*.log
+*.vcd
+*.fst
+*.lxt
+
+# Vivado / Xilinx artifacts
+.Xil/
+xsim.dir/
+syn/
+sim.f
+simulation.log
+*.jou
+*.pb
+
+# Editor and temporary files
+*~
+*.bak
+*.swp

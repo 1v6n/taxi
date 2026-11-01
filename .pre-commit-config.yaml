@@ -1,0 +1,38 @@
+repos:
+  - repo: local
+    hooks:
+      - id: collapse-blank-lines
+        name: Collapse Multiple Blank Lines
+        entry: python3 -c "import sys, re; [open(f, 'w', newline='').write(re.sub(r'[ \t]+$', '', re.sub(r'(\r?\n){3,}', r'\1\1', c), flags=re.M)) for f in sys.argv[1:] for c in [open(f, 'r', newline='').read()]]"
+        language: system
+        files: '^(rtl|tb)/.*\.(v|sv|vh|svh|cpp|h|sh|md)$'
+
+      - id: lock-format
+        name: Lock Multiline Format
+        entry: python3 tools/lock_format.py
+        language: system
+        files: '^tb/.*\.(v|sv|vh|svh)$'
+
+      - id: verible-verilog-format
+        name: Verible Verilog Format
+        entry: verible-verilog-format
+        args:
+          - --flagfile=.verible-format
+          - --inplace
+        language: system
+        files: '^tb/.*\.(v|sv|vh|svh)$'
+
+      - id: verible-verilog-lint
+        name: Verible Verilog Lint
+        entry: verible-verilog-lint
+        args:
+          - --rules_config=.rules.verible_lint
+        language: system
+        files: '^tb/.*\.(v|sv|vh|svh)$'
+
+      - id: verilator-lint
+        name: Verilator Linting
+        entry: bash tools/verilator_lint.sh
+        language: system
+        pass_filenames: false
+        files: '^tb/.*\.(v|sv|vh|svh)$'
