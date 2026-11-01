@@ -1,0 +1,52 @@
+<mxfile host="Electron" agent="Mozilla/5.0">
+  <diagram id="diagram-xgmii-verification" name="10GBASE-R XGMII Verification Architecture (Direct Loopback)">
+    <mxGraphModel dx="975" dy="625" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1280" pageHeight="600" background="#FFFFFF" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#000000;fontSize=15;fontFamily=Helvetica;fontStyle=1;" value="10GBASE-R Nominal Verification Architecture: XGMII Test Plan (Generador 1 &amp;amp; Checker 2 - Direct Loopback)" vertex="1">
+          <mxGeometry height="30" width="600" x="340" y="15" as="geometry" />
+        </mxCell>
+        <mxCell id="container_tx" parent="1" style="swimlane;startSize=26;horizontal=1;fontStyle=1;collapsible=0;rounded=0;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1.2;fontColor=#000000;fontFamily=Helvetica;fontSize=11;whiteSpace=wrap;html=1;" value="TRANSMIT DATAPATH (TX)" vertex="1">
+          <mxGeometry height="205" width="1200" x="40" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="gen_xgmii" parent="container_tx" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1.2;fontColor=#000000;align=center;verticalAlign=middle;fontFamily=Helvetica;" value="&lt;div style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;GENERADOR 1: XGMII TX&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 9px; margin-top: 2px;&quot;&gt;IEEE 802.3 Clause 46 Stimulus&lt;/div&gt;&lt;div style=&quot;margin-top: 8px; font-size: 9px; line-height: 1.45;&quot;&gt;• Drives xgmii_txd[63:0], xgmii_txc[7:0]&lt;br&gt;• Emits /S/ (Lane 0), /T/ &amp;amp; Idles&lt;br&gt;• Transmits PRBS payload&lt;br&gt;• Injects /E/ &amp;amp; corrupted lanes&lt;/div&gt;" vertex="1">
+          <mxGeometry height="145" width="250" x="20" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="dut_tx" parent="container_tx" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=2;fontColor=#000000;align=center;verticalAlign=middle;fontFamily=Helvetica;" value="&lt;div style=&quot;font-size: 12.5px;&quot;&gt;&lt;b&gt;10GBASE-R PCS TRANSMIT DUT&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 9px; margin-top: 2px;&quot;&gt;taxi_eth_phy_10g.sv [ DUT TX ]&lt;/div&gt;&lt;div style=&quot;margin-top: 10px; font-size: 9px; line-height: 1.5;&quot;&gt;• &lt;b&gt;64B/66B Encoder:&lt;/b&gt; Clause 49-7 block formats&lt;br&gt;• &lt;b&gt;Scrambler:&lt;/b&gt; G(x) = 1 + x&lt;sup&gt;39&lt;/sup&gt; + x&lt;sup&gt;58&lt;/sup&gt;&lt;br&gt;• Emits serdes_tx_data[63:0] &amp;amp; hdr[1:0]&lt;/div&gt;" vertex="1">
+          <mxGeometry height="145" width="440" x="380" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="checker_pcs_tx" parent="container_tx" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1.2;fontColor=#000000;align=center;verticalAlign=middle;fontFamily=Helvetica;" value="&lt;div style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;CHECKER 1: PCS TX&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 9px; margin-top: 2px;&quot;&gt;IEEE 802.3 Clause 49 Verification&lt;/div&gt;&lt;div style=&quot;margin-top: 8px; font-size: 9px; line-height: 1.45;&quot;&gt;• Monitors serdes_tx_data[63:0] &amp;amp; hdr[1:0]&lt;br&gt;• Validates sync headers (01b / 10b)&lt;br&gt;• Verifies 64B/66B block formatting&lt;br&gt;• PRBS check with local descrambler &amp;amp; lock&lt;/div&gt;" vertex="1">
+          <mxGeometry height="145" width="250" x="930" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="container_rx" parent="1" style="swimlane;startSize=26;horizontal=1;fontStyle=1;collapsible=0;rounded=0;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1.2;fontColor=#000000;fontFamily=Helvetica;fontSize=11;whiteSpace=wrap;html=1;" value="RECEIVE DATAPATH &amp;amp; DIRECT LOOPBACK (RX)" vertex="1">
+          <mxGeometry height="235" width="1200" x="40" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="serdes_pma" parent="container_rx" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1.2;fontColor=#000000;align=center;verticalAlign=middle;fontFamily=Helvetica;" value="&lt;div style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;SERDES PMA CHANNEL&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 9px; margin-top: 2px;&quot;&gt;Direct Physical Loopback (0 Skew)&lt;/div&gt;&lt;div style=&quot;margin-top: 8px; font-size: 9px; line-height: 1.45;&quot;&gt;• Direct loopback TX data to PCS RX&lt;br&gt;• Preserves 66-bit block boundaries&lt;br&gt;• Zero bit/cycle offset injection&lt;br&gt;• Drives serdes_rx_data[63:0] &amp;amp; hdr[1:0]&lt;/div&gt;" vertex="1">
+          <mxGeometry height="145" width="250" x="930" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="dut_rx" parent="container_rx" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=2;fontColor=#000000;align=center;verticalAlign=middle;fontFamily=Helvetica;" value="&lt;div style=&quot;font-size: 12.5px;&quot;&gt;&lt;b&gt;10GBASE-R PCS RECEIVE DUT&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 9px; margin-top: 2px;&quot;&gt;taxi_eth_phy_10g.sv [ DUT RX ]&lt;/div&gt;&lt;div style=&quot;margin-top: 10px; font-size: 9px; line-height: 1.5;&quot;&gt;• &lt;b&gt;Block Lock FSM:&lt;/b&gt; Figure 49-14 sync logic (rx_block_lock = 1)&lt;br&gt;• &lt;b&gt;Descrambler:&lt;/b&gt; G(x) = 1 + x&lt;sup&gt;39&lt;/sup&gt; + x&lt;sup&gt;58&lt;/sup&gt;&lt;br&gt;• &lt;b&gt;64B/66B Decoder:&lt;/b&gt; with error marking (/E/)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="145" width="440" x="380" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="checker_xgmii_rx" parent="container_rx" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1.2;fontColor=#000000;align=center;verticalAlign=middle;fontFamily=Helvetica;" value="&lt;div style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;CHECKER 2: XGMII RX&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;font-size: 9px; margin-top: 2px;&quot;&gt;IEEE 802.3 Clause 46 Verification&lt;/div&gt;&lt;div style=&quot;margin-top: 8px; font-size: 9px; line-height: 1.45;&quot;&gt;• Monitors xgmii_rxd[63:0], xgmii_rxc[7:0]&lt;br&gt;• Validates /S/ (Lane 0) and /T/ delimiters&lt;br&gt;• Validates /E/ errors &amp;amp; lane order&lt;br&gt;• PRBS check with local lock &amp;amp; tracking&lt;/div&gt;" vertex="1">
+          <mxGeometry height="145" width="250" x="20" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="wire_gen_dut" edge="1" parent="1" source="gen_xgmii" target="dut_tx" value="&lt;b&gt;xgmii_txd[63:0]&lt;/b&gt; (/64)&lt;br&gt;&lt;b&gt;xgmii_txc[7:0]&lt;/b&gt; (/8)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#000000;strokeWidth=1.8;endArrow=classic;endFill=1;labelBackgroundColor=#FFFFFF;labelBorderColor=#000000;fontColor=#000000;fontSize=8.5;fontFamily=Helvetica;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wire_dut_chk1" edge="1" parent="1" source="dut_tx" target="checker_pcs_tx" value="&lt;b&gt;serdes_tx_data[63:0]&lt;/b&gt; (/64)&lt;br&gt;&lt;b&gt;serdes_tx_hdr[1:0]&lt;/b&gt; (/2)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#000000;strokeWidth=1.8;endArrow=classic;endFill=1;labelBackgroundColor=#FFFFFF;labelBorderColor=#000000;fontColor=#000000;fontSize=8.5;fontFamily=Helvetica;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wire_loopback_drop" edge="1" parent="1" source="checker_pcs_tx" target="serdes_pma" value="&lt;b&gt;SerDes TX Stream (Loopback 1:1)&lt;/b&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;strokeColor=#000000;strokeWidth=1.5;endArrow=classic;endFill=1;labelBackgroundColor=#FFFFFF;labelBorderColor=#000000;fontColor=#000000;fontSize=8.5;fontFamily=Helvetica;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wire_pma_dut" edge="1" parent="1" source="serdes_pma" target="dut_rx" value="&lt;b&gt;serdes_rx_data[63:0]&lt;/b&gt; (/64)&lt;br&gt;&lt;b&gt;serdes_rx_hdr[1:0]&lt;/b&gt; (/2)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#000000;strokeWidth=1.8;endArrow=classic;endFill=1;labelBackgroundColor=#FFFFFF;labelBorderColor=#000000;fontColor=#000000;fontSize=8.5;fontFamily=Helvetica;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wire_dut_chk2" edge="1" parent="1" source="dut_rx" target="checker_xgmii_rx" value="&lt;b&gt;xgmii_rxd[63:0]&lt;/b&gt; (/64)&lt;br&gt;&lt;b&gt;xgmii_rxc[7:0]&lt;/b&gt; (/8)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#000000;strokeWidth=1.8;endArrow=classic;endFill=1;labelBackgroundColor=#FFFFFF;labelBorderColor=#000000;fontColor=#000000;fontSize=8.5;fontFamily=Helvetica;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
