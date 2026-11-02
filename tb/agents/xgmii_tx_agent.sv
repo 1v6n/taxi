@@ -20,8 +20,8 @@ module xgmii_tx_agent
 
   localparam int LANES_PER_WORD = XGMII_CTRL_W;
   localparam xgmii_word_t IDLE_WORD = '{
-    data: {LANES_PER_WORD{CTRL_IDLE}},
-    ctrl: {LANES_PER_WORD{1'b1}}
+      data: {LANES_PER_WORD{CTRL_IDLE}},
+      ctrl: {LANES_PER_WORD{1'b1}}
   };
 
   // FIFO dinamica
@@ -35,7 +35,7 @@ module xgmii_tx_agent
       xgmii_tx_valid <= 1'b1;
       tx_queue.delete();
       prbs_tx_lfsr <= PRBS31_DEFAULT_SEED;
-    // Se hace pop de la fifo y se arrancan a enviar las palabras
+      // Se hace pop de la fifo y se arrancan a enviar las palabras
     end else if (tx_queue.size() > 0) begin
       automatic xgmii_word_t word = tx_queue.pop_front();
       xgmii_txd      <= word.data;
@@ -49,7 +49,6 @@ module xgmii_tx_agent
     end
   end
 
-  // Queue operations do not wait for transmission.
   task automatic init();
     tx_queue.delete();
     prbs_tx_lfsr = PRBS31_DEFAULT_SEED;
@@ -66,16 +65,14 @@ module xgmii_tx_agent
     repeat (count) tx_queue.push_back(IDLE_WORD);
   endtask
 
-  // Return a word with one byte replaced. Queueing and lane advancement belong to the caller.
-  function automatic xgmii_word_t set_byte(
-    input xgmii_word_t word,
-    input int lane,
-    input logic [7:0] byte_value,
-    input logic is_control
-  );
+  function automatic xgmii_word_t set_byte(input xgmii_word_t word,  //
+                                           input int lane,  //
+                                           input logic [7:0] byte_value,  //
+                                           input logic is_control  //
+                                               );
     xgmii_word_t result;
 
-    result = word;
+    result                 = word;
     result.data[lane*8+:8] = byte_value;
     result.ctrl[lane]      = is_control;
     return result;
@@ -125,7 +122,7 @@ module xgmii_tx_agent
 
     prbs_bytes = new[num_bytes];
     for (int i = 0; i < num_bytes; i = i + 1) begin
-      prbs_step    = prbs31_step_8b(prbs_tx_lfsr);
+      prbs_step     = prbs31_step_8b(prbs_tx_lfsr);
       prbs_bytes[i] = prbs_step[7:0];
       prbs_tx_lfsr  = prbs_step[38:8];
     end

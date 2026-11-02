@@ -50,7 +50,6 @@ module xgmii_rx_agent
 
   lfsr_prbs_check #(
     .DATA_W          (DATA_W),  //
-    .DEFAULT_SEED    (31'h0),   //
     .LOCK_MATCH_BYTES(3)        //
   ) prbs_checker (
     .clk         (clk),                //
