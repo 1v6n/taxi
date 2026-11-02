@@ -6,7 +6,7 @@
 module lfsr_prbs_gen #(
   parameter int                   DATA_W       = 64,
   parameter int                   PRBS_BITS    = 31,
-  parameter logic [PRBS_BITS-1:0] DEFAULT_SEED = {PRBS_BITS{1'b1}},
+  parameter logic [PRBS_BITS-1:0] DEFAULT_SEED = PRBS_BITS'(lfsr_prbs_pkg::PRBS31_DEFAULT_SEED),
   parameter logic                 IEEE_INVERT  = 1'b1
 ) (
   input wire logic clk,

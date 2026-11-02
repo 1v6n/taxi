@@ -3,11 +3,13 @@
 
 `timescale 1ns / 1ps
 
-module lfsr_prbs_check #(
-  parameter int                   DATA_W       = 64,
-  parameter int                   PRBS_BITS    = 31,
-  parameter logic [PRBS_BITS-1:0] DEFAULT_SEED = {PRBS_BITS{1'b1}},
-  parameter logic                 IEEE_INVERT  = 1'b1
+module lfsr_prbs_check
+  import lfsr_prbs_pkg::*;
+#(
+  parameter int   DATA_W           = 64,
+  parameter int   PRBS_BITS        = 31,
+  parameter logic IEEE_INVERT      = 1'b1,
+  parameter int   LOCK_MATCH_BYTES = 3
 ) (
   input wire logic clk,
   input wire logic rst,
@@ -18,110 +20,113 @@ module lfsr_prbs_check #(
   output logic                   error_pulse,
   output logic      [      31:0] error_count,
 
-  input wire logic clear_errors
+  input  wire logic                clear_errors,
+  input  wire logic [DATA_W/8-1:0] byte_valid = '1,
+  input  wire logic                restart = 1'b0,
+  input  wire logic [DATA_W/8-1:0] restart_mask = '0,
+  output logic      [DATA_W/8-1:0] byte_errors
 );
 
   // G(x) = 1 + x^28 + x^31
-  function automatic logic [DATA_W+PRBS_BITS-1:0] prbs31_step(input logic [PRBS_BITS-1:0] state_in);
-    logic [DATA_W-1:0] out_data;
-    logic [PRBS_BITS-1:0] state;
-    logic fb;
+  localparam int BYTES_PER_WORD = DATA_W / 8;
+  localparam int SEED_BYTES_REQUIRED = 4;
 
-    state = state_in;
-    for (int i = 0; i < DATA_W; i = i + 1) begin
-      fb          = state[30] ^ state[27];
-      out_data[i] = IEEE_INVERT ? ~fb : fb;
-      state       = {state[29:0], fb};
+  typedef enum logic {
+    ACQUIRE = 1'b0,
+    VERIFY  = 1'b1
+  } prbs_phase_t;
+
+  typedef struct packed {
+    prbs_phase_t phase;
+    logic [30:0] lfsr;
+    int unsigned seed_bytes;
+    int unsigned matched_bytes;
+    logic        locked;
+  } prbs_state_t;
+
+  prbs_state_t state_reg;
+  prbs_state_t state_next;
+  logic [31:0] error_count_next;
+
+  initial begin
+    if (DATA_W < 8 || DATA_W % 8 != 0 || PRBS_BITS != 31 || LOCK_MATCH_BYTES < 1) begin
+      $fatal(
+          1,  //
+          "PRBS31 checker requires byte-aligned DATA_W, PRBS_BITS=31, and a positive lock threshold"
+              );
     end
-    return {state, out_data};
-  endfunction
+  end
 
-  // Seed state with the first 31 bits, then step through remaining bits
-  function automatic logic [PRBS_BITS-1:0] prbs31_acquire(input logic [DATA_W-1:0] in);
-    logic [PRBS_BITS-1:0] state;
-    logic fb;
+  always_comb begin
+    state_next       = state_reg;
+    error_count_next = clear_errors ? '0 : error_count;
+    byte_errors      = '0;
 
-    state = '0;
-    for (int i = 0; i < PRBS_BITS; i = i + 1) begin
-      fb    = IEEE_INVERT ? ~in[i] : in[i];
-      state = {state[29:0], fb};
+    if (restart) state_next = '0;
+
+    for (int lane = 0; lane < BYTES_PER_WORD; lane++) begin
+      logic [7:0] received_byte;
+      logic [38:0] prediction;
+      received_byte = data_in[lane*8+:8];
+      prediction    = '0;
+
+      if (restart_mask[lane]) state_next = '0;
+
+      if (enable && byte_valid[lane]) begin
+        case (state_next.phase)
+          // Espera los primeros 4 bytes para poder predecir el siguiente byte,
+          // el LFSR necesita 31 bits para realizar la prediccion
+          ACQUIRE: begin
+            state_next.lfsr       = prbs31_seed_byte(state_next.lfsr, received_byte, IEEE_INVERT);
+            state_next.seed_bytes = state_next.seed_bytes + 1;
+            if (state_next.seed_bytes == SEED_BYTES_REQUIRED) begin
+              // Si los 31 bits son 0, error
+              if (state_next.lfsr == '0) begin
+                byte_errors[lane] = 1'b1;
+                state_next        = '0;
+              end else begin
+                state_next.phase = VERIFY;
+              end
+            end
+          end
+          VERIFY: begin
+            // Tenemos los 31 bits, se realiza la predicción
+            prediction = prbs31_step_8b(state_next.lfsr, IEEE_INVERT);
+            if (received_byte !== prediction[7:0]) begin
+              byte_errors[lane]     = 1'b1;
+              state_next            = '0;
+              // Reset a adquire y capturamos un byte nuevo
+              state_next.lfsr       = prbs31_seed_byte('0, received_byte, IEEE_INVERT);
+              state_next.seed_bytes = 1;
+            end else begin
+              // Update de la LFSR
+              state_next.lfsr = prediction[38:8];
+              if (state_next.matched_bytes < LOCK_MATCH_BYTES) begin
+                state_next.matched_bytes = state_next.matched_bytes + 1;
+              end
+              if (state_next.matched_bytes == LOCK_MATCH_BYTES) state_next.locked = 1'b1;
+            end
+          end
+          default: state_next = '0;
+        endcase
+        // Si el bit no matchea con la PRBS o los 31 bits son todos 0
+        if (byte_errors[lane]) error_count_next = error_count_next + 1'b1;
+      end
     end
-    for (int i = PRBS_BITS; i < DATA_W; i = i + 1) begin
-      fb    = state[30] ^ state[27];
-      state = {state[29:0], fb};
-    end
-    return state;
-  endfunction
+  end
 
-  typedef enum logic [1:0] {
-    STATE_IDLE    = 2'b00,
-    STATE_ACQUIRE = 2'b01,
-    STATE_LOCKED  = 2'b10
-  } state_t;
-
-  state_t state_reg;
-  logic [PRBS_BITS-1:0] lfsr_reg;
-  logic [DATA_W+PRBS_BITS-1:0] lfsr_next;
-  logic [DATA_W-1:0] expected_data;
-
-  assign lfsr_next     = prbs31_step(lfsr_reg);
-  assign expected_data = lfsr_next[DATA_W-1:0];
+  // La salida queda como registro porque ya es estable
+  assign locked = state_reg.locked;
 
   always_ff @(posedge clk or posedge rst) begin
     if (rst) begin
-      state_reg   <= STATE_IDLE;
-      lfsr_reg    <= DEFAULT_SEED;
-      locked      <= 1'b0;
+      state_reg   <= '{phase: ACQUIRE, default: '0};
       error_pulse <= 1'b0;
       error_count <= '0;
     end else begin
-      if (clear_errors) begin
-        error_count <= '0;
-      end
-
-      error_pulse <= 1'b0;
-
-      if (!enable) begin
-        state_reg <= STATE_IDLE;
-        locked    <= 1'b0;
-      end else begin
-        case (state_reg)
-          STATE_IDLE: begin
-            lfsr_reg  <= prbs31_acquire(data_in);
-            locked    <= 1'b0;
-            state_reg <= STATE_ACQUIRE;
-          end
-
-          STATE_ACQUIRE: begin
-            if (data_in == expected_data) begin
-              lfsr_reg  <= lfsr_next[DATA_W+PRBS_BITS-1:DATA_W];
-              locked    <= 1'b1;
-              state_reg <= STATE_LOCKED;
-            end else begin
-              lfsr_reg  <= prbs31_acquire(data_in);
-              locked    <= 1'b0;
-              state_reg <= STATE_ACQUIRE;
-            end
-          end
-
-          STATE_LOCKED: begin
-            if (data_in != expected_data) begin
-              error_pulse <= 1'b1;
-              error_count <= error_count + 1;
-              locked      <= 1'b0;
-              lfsr_reg    <= prbs31_acquire(data_in);
-              state_reg   <= STATE_ACQUIRE;
-            end else begin
-              lfsr_reg <= lfsr_next[DATA_W+PRBS_BITS-1:DATA_W];
-              locked   <= 1'b1;
-            end
-          end
-
-          default: begin
-            state_reg <= STATE_IDLE;
-          end
-        endcase
-      end
+      state_reg   <= state_next;
+      error_count <= error_count_next;
+      error_pulse <= |byte_errors;
     end
   end
 
