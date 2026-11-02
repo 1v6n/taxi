@@ -14,6 +14,11 @@ package eth_phy_10g_tb_pkg;
   localparam int SERDES_HDR_W = 2;
   localparam int BLOCK_W = 66;  // 64-bit payload + 2-bit sync header
 
+  typedef struct packed {
+    logic [XGMII_DATA_W-1:0] data;
+    logic [XGMII_CTRL_W-1:0] ctrl;
+  } xgmii_word_t;
+
   // IEEE 802.3 Clause 46: XGMII Control Characters
   localparam logic [7:0] CTRL_IDLE = 8'h07;  // /I/ (Idle)
   localparam logic [7:0] CTRL_START = 8'hFB;  // /S/ (Start)
@@ -50,11 +55,6 @@ package eth_phy_10g_tb_pkg;
   localparam logic [7:0] BT_TERM_7 = 8'hFF;  // T7 D6 D5 D4 D3 D2 D1 D0 (/T/ on lane 7)
   localparam logic [7:0] BT_RESERVED_00 = 8'h00;  // Reserved block type (Table 49-1)
 
-  // PCS Timing Parameters
-  localparam int BITSLIP_HIGH_CYCLES = 1;
-  localparam int BITSLIP_LOW_CYCLES = 7;
-  localparam int BURST_SYNC_ERR_DROP = 16;  // Sync errors to drop lock (Fig 49-14)
-
   function automatic bit is_valid_sync(input logic [1:0] hdr);
     return (hdr == SYNC_DATA || hdr == SYNC_CTRL);
   endfunction
@@ -80,19 +80,6 @@ package eth_phy_10g_tb_pkg;
       default:        return $sformatf("BT_UNKNOWN (0x%02X)", bt);
     endcase
   endfunction
-
-  // 64-bit self-synchronizing descrambler: G(x) = 1 + x^39 + x^58 (Clause 49.2.10)
-  task automatic descramble_64b(input logic [63:0] scrambled_in,  //
-                                inout logic [57:0] descrambler_state,  //
-                                output logic [63:0] descrambled_out  //
-                                    );
-    logic [121:0] history;
-    history = {scrambled_in, descrambler_state};
-    for (int i = 0; i < 64; i = i + 1) begin
-      descrambled_out[i] = scrambled_in[i] ^ history[i+58-39] ^ history[i];
-    end
-    descrambler_state = scrambled_in[63:6];
-  endtask
 
   /* verilator lint_on UNUSEDPARAM */
 
