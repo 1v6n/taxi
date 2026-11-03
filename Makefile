@@ -39,4 +39,43 @@ verible-lint:
 clean:
 	rm -rf obj_dir sim.f syn/ xsim.dir/ *.pb vivado* *.jou *.log sim_output* *.vcd *.fst .Xil/ simulation.log logs waves
 
-.PHONY: all format lint verible-lint clean
+sim: $(TARGET)
+
+prbs-check-regression:
+	verilator --binary --timing -j $(JOBS) -Wall -Wno-fatal \
+		--top-module tc_lfsr_prbs_check \
+		$(TB_DIR)/common/lfsr_prbs_pkg.sv $(TB_DIR)/common/lfsr_prbs_check.sv \
+		$(TB_DIR)/tests/common/tc_lfsr_prbs_check.sv
+	./obj_dir/Vtc_lfsr_prbs_check
+
+rx-agent-regression:
+	@mkdir -p logs
+	verilator --binary --timing -j $(JOBS) -Wall -Wno-fatal -Wno-TIMESCALEMOD -Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM \
+		-Itb -Itb/common -Itb/agents --top-module tc_rx_agent_regression \
+		tb/common/eth_phy_10g_tb_pkg.sv tb/common/lfsr_prbs_pkg.sv \
+		tb/common/lfsr_prbs_check.sv \
+		tb/agents/xgmii_rx_agent.sv tb/tests/xgmii/tc_rx_agent_regression.sv
+	./obj_dir/Vtc_rx_agent_regression
+	@bash -o pipefail -c 'false | tee logs/make-pipefail-test.log' >/dev/null; status=$$?; \
+		if [ $$status -eq 0 ]; then echo "pipeline failure was hidden" >&2; exit 1; fi
+
+$(TARGET):
+	@mkdir -p $(LOG_DIR) $(WAVE_DIR)
+	verilator --binary --timing -j $(JOBS) \
+		-Wall -Wno-fatal \
+		-Wno-VARHIDDEN -Wno-WIDTHTRUNC -Wno-WIDTHEXPAND -Wno-UNDRIVEN -Wno-UNUSEDSIGNAL \
+		-Wno-UNUSEDPARAM -Wno-CASEINCOMPLETE -Wno-TIMESCALEMOD -Wno-ZERODLY \
+		-Wno-CONSTRAINTIGN -Wno-GENUNNAMED -Wno-PINCONNECTEMPTY -Wno-SYNCASYNCNET -Wno-MULTITOP \
+		-I$(RTL_DIR) -I$(TB_DIR) -I$(TB_DIR)/common -I$(TB_DIR)/agents -I$(TB_DIR)/env \
+		--top-module $(TARGET) \
+		-f $(RTL_FLIST) \
+		$(TB_DIR)/common/eth_phy_10g_tb_pkg.sv \
+		$(TB_DIR)/common/lfsr_prbs_pkg.sv \
+		$(TB_DIR)/common/lfsr_prbs_check.sv \
+		$(TB_DIR)/agents/xgmii_tx_agent.sv \
+		$(TB_DIR)/agents/xgmii_rx_agent.sv \
+		$(TB_DIR)/env/tb_env_xgmii.sv \
+		$$(find $(TB_DIR)/tests -type f -name "$(TARGET).sv")
+	bash -o pipefail -c './obj_dir/V$(TARGET) $(ARGS) | tee "$(LOG_FILE)"'
+
+.PHONY: all format lint verible-lint clean sim prbs-check-regression rx-agent-regression $(TARGET)

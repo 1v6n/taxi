@@ -54,7 +54,29 @@ verilator \
   "${LINT_WAIVERS[@]}" \
   "${INC_DIRS[@]}" \
   "${TB_DIR}/common/eth_phy_10g_tb_pkg.sv" \
+  "${TB_DIR}/common/lfsr_prbs_pkg.sv" \
   "${TB_DIR}/common/lfsr_prbs_gen.sv" \
-  "${TB_DIR}/common/lfsr_prbs_check.sv"
+  "${TB_DIR}/common/lfsr_prbs_check.sv" \
+  "${TB_DIR}/agents/xgmii_tx_agent.sv" \
+  "${TB_DIR}/agents/xgmii_rx_agent.sv"
+
+echo "[Verilator Lint] Linting Testbench Environment & Tests (tc0_sanity)..."
+verilator \
+  --lint-only \
+  -Wall \
+  -Wno-fatal \
+  -sv \
+  --timing \
+  "${LINT_WAIVERS[@]}" \
+  "${INC_DIRS[@]}" \
+  --top-module tc0_sanity \
+  -f "${RTL_DIR}/rtl.flist" \
+  "${TB_DIR}/common/eth_phy_10g_tb_pkg.sv" \
+  "${TB_DIR}/common/lfsr_prbs_pkg.sv" \
+  "${TB_DIR}/common/lfsr_prbs_check.sv" \
+  "${TB_DIR}/agents/xgmii_tx_agent.sv" \
+  "${TB_DIR}/agents/xgmii_rx_agent.sv" \
+  "${TB_DIR}/env/tb_env_xgmii.sv" \
+  "${TB_DIR}/tests/xgmii/tc0_sanity.sv"
 
 echo "[Verilator Lint] Clean."
