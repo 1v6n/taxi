@@ -23,6 +23,7 @@ module tb_env_xgmii
   input wire logic clk,
   input wire logic tx_rst,
   input wire logic rx_rst,
+  input wire logic checker_rst,
 
   // Status de agentes
 
@@ -32,6 +33,8 @@ module tb_env_xgmii
   output logic        prbs_locked,
   output logic        frame_bad,
   output logic [31:0] agent_error_count,
+  output logic        full_rx_error_detected,
+  output logic        partial_rx_error_detected,
 
   input wire logic clear_errors
 );
@@ -79,18 +82,19 @@ module tb_env_xgmii
     .DATA_W(DATA_W),  //
     .CTRL_W(CTRL_W)   //
   ) rx_agent (
-    .clk               (clk),                 //
-    .rst               (rx_rst),              //
-    .xgmii_rxd         (xgmii_rxd),           //
-    .xgmii_rxc         (xgmii_rxc),           //
-    .xgmii_rx_valid    (xgmii_rx_valid),      //
-    .in_frame          (in_frame),            //
-    .frame_count       (frame_count),         //
-    .payload_byte_count(payload_byte_count),  //
-    .prbs_locked       (prbs_locked),         //
-    .frame_bad         (frame_bad),           //
-    .error_count       (agent_error_count),   //
-    .clear_errors      (clear_errors)         //
+    .clk                  (clk),                    //
+    .rst                  (rx_rst | checker_rst),   //
+    .xgmii_rxd            (xgmii_rxd),              //
+    .xgmii_rxc            (xgmii_rxc),              //
+    .in_frame             (in_frame),               //
+    .frame_count          (frame_count),            //
+    .payload_byte_count   (payload_byte_count),     //
+    .prbs_locked          (prbs_locked),            //
+    .frame_bad            (frame_bad),              //
+    .error_count          (agent_error_count),      //
+    .full_rx_error_detected   (full_rx_error_detected),     //
+    .partial_rx_error_detected(partial_rx_error_detected),  //
+    .clear_errors         (clear_errors)            //
   );
 
   // DUT: 10G Ethernet PHY
